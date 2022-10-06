@@ -1,4 +1,4 @@
-package mains;
+
 import mqtt.MQTTclient;
 
 import runtime.IStateMachine;
@@ -22,7 +22,7 @@ public class InputMachine implements IStateMachine {
 
     InputMachine() {
         scheduler = new Scheduler(this);
-        client = new MQTTclient("tcp://broker.hivemq.com:1883", "192.168.0.196", true, scheduler);
+        client = new MQTTclient("tcp://broker.hivemq.com:1883", "ttm4160-team1-inputmachine", true, scheduler);
         new Input(scheduler);
         scheduler.start();
     }

@@ -1,4 +1,4 @@
-package mains;
+
 import mqtt.MQTTclient;
 import runtime.IStateMachine;
 import runtime.Scheduler;
@@ -34,7 +34,7 @@ public class TickerMachine implements IStateMachine {
     TickerMachine() {
         Scheduler scheduler = new Scheduler(this);
         ticker = new LEDMatrixTicker(scheduler);
-        client = new MQTTclient("tcp://broker.hivemq.com:1883", "192.168.0.196", true, scheduler);
+        client = new MQTTclient("tcp://broker.hivemq.com:1883", "ttm4160-team1-ticker", true, scheduler);
         scheduler.start();
     }
 

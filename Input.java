@@ -1,4 +1,4 @@
-package mains;
+
 import java.util.Scanner;
 
 import runtime.Scheduler;

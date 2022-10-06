@@ -1,5 +1,7 @@
 package mqtt;
 
+import java.nio.charset.StandardCharsets;
+
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttClient;
@@ -44,7 +46,7 @@ public class MQTTclient implements MqttCallback {
 	}
 
 	public void messageArrived(String topic, MqttMessage mess) {
-		scheduler.addToQueueLast(MESSAGE + mess.getPayload().toString());
+		scheduler.addToQueueLast(MESSAGE + new String(mess.getPayload(), StandardCharsets.UTF_8));
 	}
 
 	public void sendMessage(String topic, String content) {
