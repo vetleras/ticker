@@ -1,4 +1,7 @@
 
+import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.LinkedBlockingDeque;
+
 import mqtt.MQTTclient;
 import runtime.IStateMachine;
 import runtime.Scheduler;
@@ -16,20 +19,17 @@ public class TickerMachine implements IStateMachine {
             LED_MATRIX_ERROR = "LEDMatrixError",
             LED_MATRIX_TICKER_FINISHED = "LEDMatrixTickerFinished";
 
-    // private static final String[] events = { LED_MATRIX_TICKER_WAIT,
-    // LED_MATRIX_READY, LED_MATRIX_ERROR,
-    // LED_MATRIX_TICKER_FINISHED };
-
     private static enum State {
         Initializing, Idle, Ticking
     };
+    private State state = State.Initializing;
 
     private boolean matrixReady = false;
     private boolean mqttReady = false;
 
-    private State state = State.Initializing;
-
     private MQTTclient client;
+
+    private BlockingDeque<String> queue = new LinkedBlockingDeque<String>();
 
     TickerMachine() {
         Scheduler scheduler = new Scheduler(this);
@@ -41,19 +41,28 @@ public class TickerMachine implements IStateMachine {
     @Override
     public int fire(String event, Scheduler scheduler) {
         if (event.startsWith(MQTTclient.MESSAGE)) {
+            String message = event.substring(MQTTclient.MESSAGE.length());
             switch (state) {
                 case Initializing:
                     return DISCARD_EVENT;
 
-                case Idle:
-                    String message = event.substring(MQTTclient.MESSAGE.length()); // Will this slice away one character
-                                                                                   // too much? nope
-                    ticker.StartWriting(message);
-                    this.state = State.Ticking;
+                case Ticking:
+                    queue.addLast(message);
                     return EXECUTE_TRANSITION;
 
-                case Ticking:
-                    return DISCARD_EVENT;
+                case Idle:
+                    if (queue.isEmpty()) {
+                        ticker.StartWriting(message);
+                    } else {
+                        queue.add(message);
+                        try {
+                            ticker.StartWriting(queue.take());
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    this.state = State.Ticking;
+                    return EXECUTE_TRANSITION;
             }
         }
 
@@ -68,6 +77,20 @@ public class TickerMachine implements IStateMachine {
                         }
                         return EXECUTE_TRANSITION;
 
+                    default:
+                        return DISCARD_EVENT;
+                }
+                
+            case MQTTclient.READY:
+                switch (state) {
+                    case Initializing:
+                        client.subscribeToTopic(InputMachine.TOPIC);
+                        if (matrixReady) {
+                            state = State.Idle;
+                        } else {
+                            mqttReady = true;
+                        }
+                        return EXECUTE_TRANSITION;
                     default:
                         return DISCARD_EVENT;
                 }
@@ -87,7 +110,16 @@ public class TickerMachine implements IStateMachine {
             case LED_MATRIX_TICKER_FINISHED:
                 switch (state) {
                     case Ticking:
-                        state = State.Idle;
+                        if (queue.isEmpty()) {
+                            state = State.Idle;
+                        }
+                        else {
+                            try {
+                                ticker.StartWriting(queue.take());
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        }
                         return EXECUTE_TRANSITION;
                     default:
                         return DISCARD_EVENT;
@@ -97,20 +129,6 @@ public class TickerMachine implements IStateMachine {
                 switch (state) {
                     case Ticking:
                         ticker.WritingStep();
-                        return EXECUTE_TRANSITION;
-                    default:
-                        return DISCARD_EVENT;
-                }
-
-            case MQTTclient.READY:
-                switch (state) {
-                    case Initializing:
-                        client.subscribeToTopic(InputMachine.TOPIC);
-                        if (matrixReady) {
-                            state = State.Idle;
-                        } else {
-                            mqttReady = true;
-                        }
                         return EXECUTE_TRANSITION;
                     default:
                         return DISCARD_EVENT;

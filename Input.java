@@ -1,6 +1,3 @@
-
-import java.util.Scanner;
-
 import runtime.Scheduler;
 
 public class Input extends Thread {
@@ -14,9 +11,8 @@ public class Input extends Thread {
 
     @Override
     public void run() {
-        Scanner in = new Scanner(System.in);
         while (true) {
-            scheduler.addToQueueLast(INPUT + in.next());
+            scheduler.addToQueueLast(INPUT + System.console().readLine());
         }
     }
 }
