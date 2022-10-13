@@ -31,7 +31,7 @@ public class TickerMachine implements IStateMachine {
 
     private BlockingDeque<String> queue = new LinkedBlockingDeque<String>();
 
-    public static final String TOPIC = "ttm4160-team1";
+    public static final String TOPIC = "ttm4160-team1-ticker";
 
     TickerMachine() {
         Scheduler scheduler = new Scheduler(this);

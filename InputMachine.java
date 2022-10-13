@@ -5,7 +5,7 @@ import runtime.IStateMachine;
 import runtime.Scheduler;
 
 public class InputMachine implements IStateMachine {
-    public static final String TOPIC = "ttm4160-team1";
+    public static final String TOPIC = "ttm4160-team1-input";
 
     /**
      * State: Initializing - setting up the MQTTClient
@@ -45,13 +45,12 @@ public class InputMachine implements IStateMachine {
         }
 
         if (event.startsWith(Freepool.MESSAGE)) {
-            String message = event.substring(Freepool.MESSAGE.length());
             switch (state) {
                 case Initializing:
                     return DISCARD_EVENT;
 
                 case Active:
-                    client.sendMessage(TOPIC, message);
+                    client.sendMessage(TOPIC, event);
                     return EXECUTE_TRANSITION;
             }
         }
@@ -60,6 +59,7 @@ public class InputMachine implements IStateMachine {
             case MQTTclient.READY:
                 switch (state) {
                     case Initializing:
+                        client.subscribeToTopic(TOPIC);
                         state = State.Active;
                         return EXECUTE_TRANSITION;
                     default:
