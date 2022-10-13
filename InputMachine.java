@@ -36,9 +36,13 @@ public class InputMachine implements IStateMachine {
             switch (state) {
                 case Active:
                     String message = event.substring(Input.INPUT.length());
-                    freepool.sendData(message);
-                    this.state = State.Active;
-                    return EXECUTE_TRANSITION;
+                    if (freepool.sendData(message)) {
+                        this.state = State.Active;
+                        return EXECUTE_TRANSITION;
+                    } else {
+                        return DISCARD_EVENT;
+                    }
+                    
                 default:
                     return DISCARD_EVENT;
             }
