@@ -59,7 +59,7 @@ public class InputMachine implements IStateMachine {
             case MQTTclient.READY:
                 switch (state) {
                     case Initializing:
-                        client.subscribeToTopic(TOPIC);
+                        client.subscribeToTopic(TickerMachine.TOPIC);
                         state = State.Active;
                         return EXECUTE_TRANSITION;
                     default:

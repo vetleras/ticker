@@ -112,7 +112,7 @@ public class TickerMachine implements IStateMachine {
             case LED_MATRIX_TICKER_FINISHED:
                 switch (state) {
                     case Ticking:
-                        client.sendMessage(TOPIC, Freepool.FREEPOOL);
+                        client.sendMessage(TickerMachine.TOPIC, Freepool.FREEPOOL);
                         if (queue.isEmpty()) {
                             state = State.Idle;
                         }
