@@ -17,8 +17,7 @@ public class MQTTclient implements MqttCallback {
 	private Scheduler scheduler;
 	private MqttClient client;
 
-	public static final String READY = "MQTTReady", ERROR = "MQTTError",
-			MESSAGE = "MESSAGE";
+	public static final String READY = "MQTTReady", ERROR = "MQTTError";
 
 	public MQTTclient(String broker, String myAddress, boolean conf, Scheduler s) {
 		scheduler = s;
@@ -46,7 +45,7 @@ public class MQTTclient implements MqttCallback {
 	}
 
 	public void messageArrived(String topic, MqttMessage mess) {
-		scheduler.addToQueueLast(MESSAGE + new String(mess.getPayload(), StandardCharsets.UTF_8));
+		scheduler.addToQueueLast(new String(mess.getPayload(), StandardCharsets.UTF_8));
 	}
 
 	public void sendMessage(String topic, String content) {

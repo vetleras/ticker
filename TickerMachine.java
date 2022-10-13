@@ -31,6 +31,8 @@ public class TickerMachine implements IStateMachine {
 
     private BlockingDeque<String> queue = new LinkedBlockingDeque<String>();
 
+    public static final String TOPIC = "ttm4160-team1";
+
     TickerMachine() {
         Scheduler scheduler = new Scheduler(this);
         ticker = new LEDMatrixTicker(scheduler);
@@ -40,8 +42,8 @@ public class TickerMachine implements IStateMachine {
 
     @Override
     public int fire(String event, Scheduler scheduler) {
-        if (event.startsWith(MQTTclient.MESSAGE)) {
-            String message = event.substring(MQTTclient.MESSAGE.length());
+        if (event.startsWith(Freepool.MESSAGE)) {
+            String message = event.substring(Freepool.MESSAGE.length());
             switch (state) {
                 case Initializing:
                     return DISCARD_EVENT;
@@ -110,6 +112,7 @@ public class TickerMachine implements IStateMachine {
             case LED_MATRIX_TICKER_FINISHED:
                 switch (state) {
                     case Ticking:
+                        client.sendMessage(TOPIC, Freepool.FREEPOOL);
                         if (queue.isEmpty()) {
                             state = State.Idle;
                         }

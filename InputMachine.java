@@ -8,21 +8,24 @@ public class InputMachine implements IStateMachine {
     public static final String TOPIC = "ttm4160-team1";
 
     /**
-     * State: Idle - setting up the MQTTClient
+     * State: Initializing - setting up the MQTTClient
      * State: Active - MQTTClient ready to receive messages
      */
     private static enum State {
-        Idle, Active
+        Initializing, Active
     };
 
-    private State state = State.Idle;
+    private State state = State.Initializing;
 
     private Scheduler scheduler;
     private MQTTclient client;
 
+    private Freepool freepool;
+
     InputMachine() {
         scheduler = new Scheduler(this);
         client = new MQTTclient("tcp://broker.hivemq.com:1883", "ttm4160-team1-inputmachine", true, scheduler);
+        freepool = new Freepool(8, scheduler);
         new Input(scheduler);
         scheduler.start();
     }
@@ -33,7 +36,7 @@ public class InputMachine implements IStateMachine {
             switch (state) {
                 case Active:
                     String message = event.substring(Input.INPUT.length());
-                    client.sendMessage(TOPIC, message);
+                    freepool.sendData(message);
                     this.state = State.Active;
                     return EXECUTE_TRANSITION;
                 default:
@@ -41,10 +44,22 @@ public class InputMachine implements IStateMachine {
             }
         }
 
+        if (event.startsWith(Freepool.MESSAGE)) {
+            String message = event.substring(Freepool.MESSAGE.length());
+            switch (state) {
+                case Initializing:
+                    return DISCARD_EVENT;
+
+                case Active:
+                    client.sendMessage(TOPIC, message);
+                    return EXECUTE_TRANSITION;
+            }
+        }
+
         switch (event) {
             case MQTTclient.READY:
                 switch (state) {
-                    case Idle:
+                    case Initializing:
                         state = State.Active;
                         return EXECUTE_TRANSITION;
                     default:
@@ -53,6 +68,11 @@ public class InputMachine implements IStateMachine {
 
             case MQTTclient.ERROR:
                 return TERMINATE_SYSTEM;
+        
+
+            case Freepool.FREEPOOL:
+                freepool.receiveFreepool();
+                return EXECUTE_TRANSITION;
 
             default:
                 return DISCARD_EVENT;
